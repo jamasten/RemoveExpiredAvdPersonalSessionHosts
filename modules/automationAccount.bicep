@@ -56,7 +56,7 @@ resource runbook 'Microsoft.Automation/automationAccounts/runbooks@2019-06-01' =
     logProgress: false
     logVerbose: false
     publishContentLink: {
-      uri: 'https://raw.githubusercontent.com/jamasten/Azure/main/solutions/avdRemoveStalePersonalSessionHosts/artifacts/Remove-StaleHosts.ps1'
+      uri: 'https://raw.githubusercontent.com/jamasten/RemoveExpiredAvdPersonalSessionHosts/main/artifacts/Remove-StaleHosts.ps1'
       version: '1.0.0.0'
     }
   }
