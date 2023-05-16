@@ -1,0 +1,205 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2021-09-09/uiFormDefinition.schema.json",
+    "view": {
+        "kind": "Form",
+        "properties": {
+            "title": "Remove Expired AVD Personal Session Hosts",
+            "steps": [
+                {
+                    "name": "basics",
+                    "label": "Basics",
+                    "elements": [
+                        {
+                            "name": "resourceScope",
+                            "type": "Microsoft.Common.ResourceScope",
+                            "location": {
+                                "resourceTypes": [
+                                    "Microsoft.Automation/automationAccounts",
+                                    "Microsoft.OperationalInsights/workspaces",
+                                    "Microsoft.Insights/diagnosticsettings",
+                                    "Microsoft.Insights/scheduledQueryRules"
+                                ],
+                                "allowedValues": []
+                            }
+                        },
+                        {
+                            "name": "enableAlerting",
+                            "type": "Microsoft.Common.CheckBox",
+                            "label": "Enable Alerting",
+                            "constraints": {
+                                "required": false
+                            }
+                        },
+                        {
+                            "name": "names",
+                            "type": "Microsoft.Common.Section",
+                            "label": "Resource Names",
+                            "elements": [
+                                {
+                                    "name": "actionGroup",
+                                    "type": "Microsoft.Common.TextBox",
+                                    "label": "Action Group",
+                                    "placeholder": "ag-avd-d-use",
+                                    "defaultValue": "ag-avd-d-use",
+                                    "toolTip": "Input the name for the new action group.",
+                                    "constraints": {
+                                        "required": true,
+                                        "regex": "^(?!.*[\\.]$)(?!.* $)[^/&%\\\\?]{1,260}$",
+                                        "validationMessage": "The value must be 1 to 260 characters in length. The value must contain only the following: slash, ampersand, percent sign, backslash, and question mark. The value cannot end with a space or period."
+                                    },
+                                    "visible": "[steps('basics').enableAlerting]"
+                                },
+                                {
+                                    "name": "automationAccount",
+                                    "type": "Microsoft.Common.TextBox",
+                                    "label": "Automation Account",
+                                    "placeholder": "aa-avd-d-use",
+                                    "defaultValue": "aa-avd-d-use",
+                                    "toolTip": "Input the name for the new automation account.",
+                                    "constraints": {
+                                        "required": true,
+                                        "regex": "^[a-zA-Z][a-zA-Z0-9-]{4,48}[a-zA-Z0-9]$",
+                                        "validationMessage": "The value must be 6 to 50 characters in length. The value must contain only the following: alphanumerics and hyphens. The value must start with a letter. The value must end with an alphanumeric."
+                                    },
+                                    "visible": true
+                                },
+                                {
+                                    "name": "logAnalyticsWorkspace",
+                                    "type": "Microsoft.Common.TextBox",
+                                    "label": "Log Analytics Workspace",
+                                    "placeholder": "law-avd-d-use",
+                                    "defaultValue": "law-avd-d-use",
+                                    "toolTip": "Input the name for the new log analytics workspace.",
+                                    "constraints": {
+                                        "required": true,
+                                        "regex": "^[a-zA-Z0-9-]{4,63}$",
+                                        "validationMessage": "The value must be 4 to 63 characters in length. The value must contain only the following: alphanumerics and hyphens. The value must start and end with an alphanumeric."
+                                    },
+                                    "visible": true
+                                },
+                                {
+                                    "name": "resourceGroup",
+                                    "type": "Microsoft.Common.TextBox",
+                                    "label": "Resource Group",
+                                    "placeholder": "rg-avd-d-use",
+                                    "defaultValue": "rg-avd-d-use",
+                                    "toolTip": "Input the name for the new resource group.",
+                                    "constraints": {
+                                        "required": true,
+                                        "regex": "^(?!.*[\\.]$)[a-zA-Z0-9_\\.()-]{1,90}$",
+                                        "validationMessage": "The value must be 1 to 90 characters in length. The value must contain only the following: alphanumerics, underscores, parentheses, hyphens, periods, and unicode characters that match the regex documentation. The value cannot end with a period."
+                                    },
+                                    "visible": true
+                                }
+                            ]
+                        },
+                        {
+                            "name": "scope",
+                            "type": "Microsoft.Common.Section",
+                            "label": "Solution Scope",
+                            "elements": [
+                                {
+                                    "name": "hostPool",
+                                    "type": "Microsoft.Solutions.ResourceSelector",
+                                    "label": "Host Pool",
+                                    "resourceType": "Microsoft.DesktopVirtualization/hostPools",
+                                    "options": {}
+                                },
+                                {
+                                    "name": "sessionHostExpirationInDays",
+                                    "type": "Microsoft.Common.Slider",
+                                    "min": 1,
+                                    "max": 730,
+                                    "label": "Session Host Expiration In Days",
+                                    "showStepMarkers": false,
+                                    "toolTip": "Pick the number of days before a session host expires and should be removed.",
+                                    "constraints": {
+                                      "required": true
+                                    },
+                                    "visible": true
+                                  }
+                            ]
+                        },
+                        {
+                            "name": "distributionGroup",
+                            "type": "Microsoft.Common.TextBox",
+                            "visible": "[steps('basics').enableAlerting]",
+                            "label": "Distribution group",
+                            "toolTip": "Input the distribution group for receiving execution status alerts.",
+                            "placeholder": "Example: operations@contoso.com",
+                            "constraints": {
+                                "required": true,
+                                "regex": "^[a-z0-9A-Z_.-]+@(?:[a-z0-9]+\\.)+[a-z]+$",
+                                "validationMessage": "The value must be a valid email address."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "tags",
+                    "label": "Tags",
+                    "elements": [
+                        {
+                            "name": "customTags",
+                            "type": "Microsoft.Common.EditableGrid",
+                            "ariaLabel": "Enter information per person",
+                            "label": "Resource Tags",
+                            "constraints": {
+                                "width": "Full",
+                                "rows": {
+                                    "count": {
+                                        "min": 0,
+                                        "max": 10
+                                    }
+                                },
+                                "columns": [
+                                    {
+                                        "id": "name",
+                                        "header": "Name",
+                                        "width": "1fr",
+                                        "element": {
+                                            "type": "Microsoft.Common.TextBox",
+                                            "placeholder": "",
+                                            "constraints": {
+                                                "required": true,
+                                                "validations": []
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "id": "value",
+                                        "header": "Value",
+                                        "width": "1fr",
+                                        "element": {
+                                            "type": "Microsoft.Common.TextBox",
+                                            "placeholder": "",
+                                            "constraints": {
+                                                "required": true,
+                                                "validations": []
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "outputs": {
+            "parameters": {
+                "ActionGroupName": "[if(steps('basics').enableAlerting, steps('basics').names.actionGroup, '')]",
+                "AutomationAccountName": "[steps('basics').names.automationAccount]",
+                "DistributionGroup": "[if(steps('basics').enableAlerting, steps('basics').distributionGroup, '')]",
+                "HostPoolResourceId": "[steps('basics').scope.hostPool.id]",
+                "LogAnalyticsWorkspaceName": "[steps('basics').names.logAnalyticsWorkspace]",
+                "ResourceGroupName": "[steps('basics').names.resourceGroup]",
+                "SessionHostExpirationInDays": "[steps('basics').scope.sessionHostExpirationInDays]",
+                "Tags": "[if(equals(steps('tags').customTags, parse('[{\"name\":\"\",\"value\":\"\"}]')), parse('{}'), parse(replace(replace(replace(replace(string(map(steps('tags').customTags, (item) => parse(concat('{\"', item.name, '\": \"', item.value, '\"}')))), '{', ''), '}', ''), '[', '{'), ']', '}')))]"
+            },
+            "kind": "Subscription",
+            "location": "[steps('basics').resourceScope.location.name]",
+            "subscriptionId": "[steps('basics').resourceScope.subscription.id]"
+        }
+    }
+}
