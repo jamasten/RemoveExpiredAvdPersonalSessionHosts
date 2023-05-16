@@ -1,0 +1,734 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.17.1.54307",
+      "templateHash": "4425274639036207461"
+    }
+  },
+  "parameters": {
+    "Environment": {
+      "type": "string",
+      "defaultValue": "d",
+      "metadata": {
+        "description": "The target environment for the solution."
+      },
+      "allowedValues": [
+        "d",
+        "p",
+        "s",
+        "t"
+      ]
+    },
+    "HostPoolName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the AVD host pool to manage expired session hosts."
+      }
+    },
+    "HostPoolResourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the resource group for the AVD host pool to manage expired session hosts."
+      }
+    },
+    "Location": {
+      "type": "string",
+      "defaultValue": "[deployment().location]",
+      "metadata": {
+        "description": "Location for all the deployed resources and resource group."
+      }
+    },
+    "SessionHostExpirationInDays": {
+      "type": "int",
+      "defaultValue": 90,
+      "metadata": {
+        "description": "The number of days until an AVD session host expires."
+      },
+      "minValue": 1,
+      "maxValue": 730
+    },
+    "Tags": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "The key / value pairs of metadata for the Azure resources."
+      }
+    },
+    "Timestamp": {
+      "type": "string",
+      "defaultValue": "[utcNow('yyyyMMddhhmmss')]",
+      "metadata": {
+        "description": "DO NOT MODIFY THE DEFAULT VALUE!"
+      }
+    }
+  },
+  "variables": {
+    "AutomationAccountName": "[format('aa-{0}', variables('NamingStandard'))]",
+    "LocationShortName": "[variables('LocationShortNames')[parameters('Location')]]",
+    "LocationShortNames": {
+      "australiacentral": "ac",
+      "australiacentral2": "ac2",
+      "australiaeast": "ae",
+      "australiasoutheast": "as",
+      "brazilsouth": "bs2",
+      "brazilsoutheast": "bs",
+      "canadacentral": "cc",
+      "canadaeast": "ce",
+      "centralindia": "ci",
+      "centralus": "cu",
+      "eastasia": "ea",
+      "eastus": "eu",
+      "eastus2": "eu2",
+      "francecentral": "fc",
+      "francesouth": "fs",
+      "germanynorth": "gn",
+      "germanywestcentral": "gwc",
+      "japaneast": "je",
+      "japanwest": "jw",
+      "jioindiacentral": "jic",
+      "jioindiawest": "jiw",
+      "koreacentral": "kc",
+      "koreasouth": "ks",
+      "northcentralus": "ncu",
+      "northeurope": "ne",
+      "norwayeast": "ne2",
+      "norwaywest": "nw",
+      "southafricanorth": "san",
+      "southafricawest": "saw",
+      "southcentralus": "scu",
+      "southeastasia": "sa",
+      "southindia": "si",
+      "swedencentral": "sc",
+      "switzerlandnorth": "sn",
+      "switzerlandwest": "sw",
+      "uaecentral": "uc",
+      "uaenorth": "un",
+      "uksouth": "us",
+      "ukwest": "uw",
+      "usdodcentral": "uc",
+      "usdodeast": "ue",
+      "usgovarizona": "az",
+      "usgoviowa": "ia",
+      "usgovtexas": "tx",
+      "usgovvirginia": "va",
+      "westcentralus": "wcu",
+      "westeurope": "we",
+      "westindia": "wi",
+      "westus": "wu",
+      "westus2": "wu2",
+      "westus3": "wu3"
+    },
+    "LogicAppName": "[format('la-{0}', variables('NamingStandard'))]",
+    "LogAnalyticsWorkspaceName": "[format('law-{0}', variables('NamingStandard'))]",
+    "NamingStandard": "[format('avd-mgmt-{0}-{1}', parameters('Environment'), variables('LocationShortName'))]",
+    "ResourceGroupName": "[format('rg-{0}', variables('NamingStandard'))]",
+    "RoleAssignments": [
+      {
+        "scope": "[parameters('HostPoolResourceGroupName')]",
+        "roleDefinitionId": "a959dbd1-f747-45e3-8ba6-dd80f235f97c"
+      },
+      {
+        "scope": "[variables('ResourceGroupName')]",
+        "roleDefinitionId": "43d0d8ad-25c7-4714-9337-8ba259a9fe05"
+      }
+    ],
+    "RunbookName": "RemoveExpiredSessionHosts",
+    "TimeZone": "[variables('TimeZones')[parameters('Location')]]",
+    "TimeZones": {
+      "australiacentral": "AUS Eastern Standard Time",
+      "australiacentral2": "AUS Eastern Standard Time",
+      "australiaeast": "AUS Eastern Standard Time",
+      "australiasoutheast": "AUS Eastern Standard Time",
+      "brazilsouth": "E. South America Standard Time",
+      "brazilsoutheast": "E. South America Standard Time",
+      "canadacentral": "Eastern Standard Time",
+      "canadaeast": "Eastern Standard Time",
+      "centralindia": "India Standard Time",
+      "centralus": "Central Standard Time",
+      "chinaeast": "China Standard Time",
+      "chinaeast2": "China Standard Time",
+      "chinanorth": "China Standard Time",
+      "chinanorth2": "China Standard Time",
+      "eastasia": "China Standard Time",
+      "eastus": "Eastern Standard Time",
+      "eastus2": "Eastern Standard Time",
+      "francecentral": "Central Europe Standard Time",
+      "francesouth": "Central Europe Standard Time",
+      "germanynorth": "Central Europe Standard Time",
+      "germanywestcentral": "Central Europe Standard Time",
+      "japaneast": "Tokyo Standard Time",
+      "japanwest": "Tokyo Standard Time",
+      "jioindiacentral": "India Standard Time",
+      "jioindiawest": "India Standard Time",
+      "koreacentral": "Korea Standard Time",
+      "koreasouth": "Korea Standard Time",
+      "northcentralus": "Central Standard Time",
+      "northeurope": "GMT Standard Time",
+      "norwayeast": "Central Europe Standard Time",
+      "norwaywest": "Central Europe Standard Time",
+      "southafricanorth": "South Africa Standard Time",
+      "southafricawest": "South Africa Standard Time",
+      "southcentralus": "Central Standard Time",
+      "southindia": "India Standard Time",
+      "southeastasia": "Singapore Standard Time",
+      "swedencentral": "Central Europe Standard Time",
+      "switzerlandnorth": "Central Europe Standard Time",
+      "switzerlandwest": "Central Europe Standard Time",
+      "uaecentral": "Arabian Standard Time",
+      "uaenorth": "Arabian Standard Time",
+      "uksouth": "GMT Standard Time",
+      "ukwest": "GMT Standard Time",
+      "usdodcentral": "Central Standard Time",
+      "usdodeast": "Eastern Standard Time",
+      "usgovarizona": "Mountain Standard Time",
+      "usgoviowa": "Central Standard Time",
+      "usgovtexas": "Central Standard Time",
+      "usgovvirginia": "Eastern Standard Time",
+      "westcentralus": "Mountain Standard Time",
+      "westeurope": "Central Europe Standard Time",
+      "westindia": "India Standard Time",
+      "westus": "Pacific Standard Time",
+      "westus2": "Pacific Standard Time",
+      "westus3": "Mountain Standard Time"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2020-10-01",
+      "name": "[variables('ResourceGroupName')]",
+      "location": "[parameters('Location')]",
+      "tags": "[parameters('Tags')]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('LogAnalyticsWorkspace_{0}', parameters('Timestamp'))]",
+      "resourceGroup": "[variables('ResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "Location": {
+            "value": "[parameters('Location')]"
+          },
+          "LogAnalyticsWorkspaceName": {
+            "value": "[variables('LogAnalyticsWorkspaceName')]"
+          },
+          "SessionHostExpirationInDays": {
+            "value": "[parameters('SessionHostExpirationInDays')]"
+          },
+          "Tags": {
+            "value": "[parameters('Tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.17.1.54307",
+              "templateHash": "2825400617272471501"
+            }
+          },
+          "parameters": {
+            "Location": {
+              "type": "string"
+            },
+            "LogAnalyticsWorkspaceName": {
+              "type": "string"
+            },
+            "SessionHostExpirationInDays": {
+              "type": "int"
+            },
+            "Tags": {
+              "type": "object"
+            }
+          },
+          "variables": {
+            "LogAnalyticsWorkspaceRetention": "[if(lessOrEquals(parameters('SessionHostExpirationInDays'), 30), 30, parameters('SessionHostExpirationInDays'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2021-06-01",
+              "name": "[parameters('LogAnalyticsWorkspaceName')]",
+              "location": "[parameters('Location')]",
+              "tags": "[parameters('Tags')]",
+              "properties": {
+                "sku": {
+                  "name": "PerGB2018"
+                },
+                "retentionInDays": "[variables('LogAnalyticsWorkspaceRetention')]",
+                "workspaceCapping": {
+                  "dailyQuotaGb": -1
+                },
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+              }
+            }
+          ],
+          "outputs": {
+            "resourceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('LogAnalyticsWorkspaceName'))]"
+            },
+            "workspaceId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', parameters('LogAnalyticsWorkspaceName')), '2021-06-01').customerId]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('ResourceGroupName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('HostPool_{0}', parameters('Timestamp'))]",
+      "resourceGroup": "[parameters('HostPoolResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "HostPoolName": {
+            "value": "[parameters('HostPoolName')]"
+          },
+          "LogAnalyticsWorkspaceResourceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('ResourceGroupName')), 'Microsoft.Resources/deployments', format('LogAnalyticsWorkspace_{0}', parameters('Timestamp'))), '2022-09-01').outputs.resourceId.value]"
+          },
+          "NamingStandard": {
+            "value": "[variables('NamingStandard')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.17.1.54307",
+              "templateHash": "17199913182959323477"
+            }
+          },
+          "parameters": {
+            "HostPoolName": {
+              "type": "string"
+            },
+            "LogAnalyticsWorkspaceResourceId": {
+              "type": "string"
+            },
+            "NamingStandard": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[format('Microsoft.DesktopVirtualization/hostPools/{0}', parameters('HostPoolName'))]",
+              "name": "[format('diag-{0}', parameters('NamingStandard'))]",
+              "properties": {
+                "logs": [
+                  {
+                    "category": "Connection",
+                    "enabled": true
+                  }
+                ],
+                "workspaceId": "[parameters('LogAnalyticsWorkspaceResourceId')]"
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('ResourceGroupName')), 'Microsoft.Resources/deployments', format('LogAnalyticsWorkspace_{0}', parameters('Timestamp')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('AutomationAccount_{0}', parameters('Timestamp'))]",
+      "resourceGroup": "[variables('ResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "AutomationAccountName": {
+            "value": "[variables('AutomationAccountName')]"
+          },
+          "HostPoolName": {
+            "value": "[parameters('HostPoolName')]"
+          },
+          "HostPoolResourceGroupName": {
+            "value": "[parameters('HostPoolResourceGroupName')]"
+          },
+          "Location": {
+            "value": "[parameters('Location')]"
+          },
+          "LogAnalyticsWorkspaceResourceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('ResourceGroupName')), 'Microsoft.Resources/deployments', format('LogAnalyticsWorkspace_{0}', parameters('Timestamp'))), '2022-09-01').outputs.resourceId.value]"
+          },
+          "LogicAppName": {
+            "value": "[variables('LogicAppName')]"
+          },
+          "RunbookName": {
+            "value": "[variables('RunbookName')]"
+          },
+          "SessionHostExpirationInDays": {
+            "value": "[parameters('SessionHostExpirationInDays')]"
+          },
+          "Tags": {
+            "value": "[parameters('Tags')]"
+          },
+          "Timestamp": {
+            "value": "[parameters('Timestamp')]"
+          },
+          "TimeZone": {
+            "value": "[variables('TimeZone')]"
+          },
+          "WorkspaceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('ResourceGroupName')), 'Microsoft.Resources/deployments', format('LogAnalyticsWorkspace_{0}', parameters('Timestamp'))), '2022-09-01').outputs.workspaceId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.17.1.54307",
+              "templateHash": "1628489429797224190"
+            }
+          },
+          "parameters": {
+            "AutomationAccountName": {
+              "type": "string"
+            },
+            "HostPoolName": {
+              "type": "string"
+            },
+            "HostPoolResourceGroupName": {
+              "type": "string"
+            },
+            "Location": {
+              "type": "string"
+            },
+            "LogAnalyticsWorkspaceResourceId": {
+              "type": "string"
+            },
+            "LogicAppName": {
+              "type": "string"
+            },
+            "RunbookName": {
+              "type": "string"
+            },
+            "SessionHostExpirationInDays": {
+              "type": "int"
+            },
+            "Tags": {
+              "type": "object"
+            },
+            "Timestamp": {
+              "type": "string"
+            },
+            "Timestamp2": {
+              "type": "string",
+              "defaultValue": "[utcNow('u')]",
+              "metadata": {
+                "description": "ISO 8601 timestamp used to determine the webhook expiration date.  The webhook is hardcoded to expire 5 years after the timestamp."
+              }
+            },
+            "TimeZone": {
+              "type": "string"
+            },
+            "WorkspaceId": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Automation/automationAccounts",
+              "apiVersion": "2021-06-22",
+              "name": "[parameters('AutomationAccountName')]",
+              "location": "[parameters('Location')]",
+              "tags": "[parameters('Tags')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "sku": {
+                  "name": "Free"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2017-05-01-preview",
+              "scope": "[format('Microsoft.Automation/automationAccounts/{0}', parameters('AutomationAccountName'))]",
+              "name": "[format('diag-{0}', parameters('AutomationAccountName'))]",
+              "properties": {
+                "logs": [
+                  {
+                    "category": "JobLogs",
+                    "enabled": true
+                  },
+                  {
+                    "category": "JobStreams",
+                    "enabled": true
+                  }
+                ],
+                "workspaceId": "[parameters('LogAnalyticsWorkspaceResourceId')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Automation/automationAccounts', parameters('AutomationAccountName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Automation/automationAccounts/runbooks",
+              "apiVersion": "2019-06-01",
+              "name": "[format('{0}/{1}', parameters('AutomationAccountName'), parameters('RunbookName'))]",
+              "location": "[parameters('Location')]",
+              "tags": "[parameters('Tags')]",
+              "properties": {
+                "runbookType": "PowerShell",
+                "logProgress": false,
+                "logVerbose": false,
+                "publishContentLink": {
+                  "uri": "https://raw.githubusercontent.com/jamasten/RemoveExpiredAvdPersonalSessionHosts/main/artifacts/Remove-StaleHosts.ps1",
+                  "version": "1.0.0.0"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Automation/automationAccounts', parameters('AutomationAccountName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Automation/automationAccounts/webhooks",
+              "apiVersion": "2015-10-31",
+              "name": "[format('{0}/{1}', parameters('AutomationAccountName'), format('{0}_{1}', parameters('RunbookName'), parameters('Timestamp')))]",
+              "properties": {
+                "isEnabled": true,
+                "expiryTime": "[dateTimeAdd(parameters('Timestamp2'), 'P5Y')]",
+                "runbook": {
+                  "name": "[parameters('RunbookName')]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Automation/automationAccounts', parameters('AutomationAccountName'))]",
+                "[resourceId('Microsoft.Automation/automationAccounts/runbooks', parameters('AutomationAccountName'), parameters('RunbookName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "LogicApp",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "Location": {
+                    "value": "[parameters('Location')]"
+                  },
+                  "LogicAppName": {
+                    "value": "[parameters('LogicAppName')]"
+                  },
+                  "Tags": {
+                    "value": "[parameters('Tags')]"
+                  },
+                  "TimeZone": {
+                    "value": "[parameters('TimeZone')]"
+                  },
+                  "WebhookUri": {
+                    "value": "[reference(resourceId('Microsoft.Automation/automationAccounts/webhooks', parameters('AutomationAccountName'), format('{0}_{1}', parameters('RunbookName'), parameters('Timestamp'))), '2015-10-31').uri]"
+                  },
+                  "HostPoolName": {
+                    "value": "[parameters('HostPoolName')]"
+                  },
+                  "HostPoolResourceGroupName": {
+                    "value": "[parameters('HostPoolResourceGroupName')]"
+                  },
+                  "SessionHostExpirationInDays": {
+                    "value": "[parameters('SessionHostExpirationInDays')]"
+                  },
+                  "WorkspaceId": {
+                    "value": "[parameters('WorkspaceId')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.17.1.54307",
+                      "templateHash": "2183564220241956597"
+                    }
+                  },
+                  "parameters": {
+                    "HostPoolName": {
+                      "type": "string"
+                    },
+                    "HostPoolResourceGroupName": {
+                      "type": "string"
+                    },
+                    "Location": {
+                      "type": "string"
+                    },
+                    "LogicAppName": {
+                      "type": "string"
+                    },
+                    "SessionHostExpirationInDays": {
+                      "type": "int"
+                    },
+                    "Tags": {
+                      "type": "object"
+                    },
+                    "TimeZone": {
+                      "type": "string"
+                    },
+                    "WebhookUri": {
+                      "type": "securestring"
+                    },
+                    "WorkspaceId": {
+                      "type": "string"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Logic/workflows",
+                      "apiVersion": "2016-06-01",
+                      "name": "[parameters('LogicAppName')]",
+                      "location": "[parameters('Location')]",
+                      "tags": "[parameters('Tags')]",
+                      "properties": {
+                        "state": "Enabled",
+                        "definition": {
+                          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                          "actions": {
+                            "HTTP": {
+                              "type": "Http",
+                              "inputs": {
+                                "method": "POST",
+                                "uri": "[parameters('WebhookUri')]",
+                                "body": {
+                                  "EnvironmentName": "[environment().name]",
+                                  "HostPoolName": "[parameters('HostPoolName')]",
+                                  "HostPoolResourceGroupName": "[parameters('HostPoolResourceGroupName')]",
+                                  "SessionHostExpirationInDays": "[parameters('SessionHostExpirationInDays')]",
+                                  "SubscriptionId": "[subscription().subscriptionId]",
+                                  "TenantId": "[subscription().tenantId]",
+                                  "WorkspaceId": "[parameters('WorkspaceId')]"
+                                }
+                              }
+                            }
+                          },
+                          "triggers": {
+                            "Recurrence": {
+                              "type": "Recurrence",
+                              "recurrence": {
+                                "frequency": "Day",
+                                "interval": 1,
+                                "startTime": "2022-01-01T23:00:00",
+                                "timeZone": "[parameters('TimeZone')]"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Automation/automationAccounts/webhooks', parameters('AutomationAccountName'), format('{0}_{1}', parameters('RunbookName'), parameters('Timestamp')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "principalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Automation/automationAccounts', parameters('AutomationAccountName')), '2021-06-22', 'full').identity.principalId]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('ResourceGroupName')), 'Microsoft.Resources/deployments', format('LogAnalyticsWorkspace_{0}', parameters('Timestamp')))]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('ResourceGroupName'))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "roleAssignments",
+        "count": "[length(range(0, length(variables('RoleAssignments'))))]"
+      },
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('RoleAssignments_{0}_{1}', range(0, length(variables('RoleAssignments')))[copyIndex()], parameters('Timestamp'))]",
+      "resourceGroup": "[variables('RoleAssignments')[range(0, length(variables('RoleAssignments')))[copyIndex()]].scope]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "RoleDefinitionId": {
+            "value": "[variables('RoleAssignments')[range(0, length(variables('RoleAssignments')))[copyIndex()]].roleDefinitionId]"
+          },
+          "PrincipalId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('ResourceGroupName')), 'Microsoft.Resources/deployments', format('AutomationAccount_{0}', parameters('Timestamp'))), '2022-09-01').outputs.principalId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.17.1.54307",
+              "templateHash": "18019906590964517932"
+            }
+          },
+          "parameters": {
+            "RoleDefinitionId": {
+              "type": "string"
+            },
+            "PrincipalId": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[guid(parameters('PrincipalId'), parameters('RoleDefinitionId'), resourceGroup().id)]",
+              "properties": {
+                "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', parameters('RoleDefinitionId'))]",
+                "principalId": "[parameters('PrincipalId')]",
+                "principalType": "ServicePrincipal"
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('ResourceGroupName')), 'Microsoft.Resources/deployments', format('AutomationAccount_{0}', parameters('Timestamp')))]"
+      ]
+    }
+  ]
+}
