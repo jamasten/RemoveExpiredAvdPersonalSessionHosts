@@ -94,6 +94,7 @@ try
 }
 catch 
 {
+    Write-Output 'Failed to remove session hosts'
     Write-Output $_.Exception
     throw
 }
