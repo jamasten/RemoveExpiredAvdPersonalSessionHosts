@@ -1,18 +1,15 @@
 param AutomationAccountName string
 param HostPoolName string
 param HostPoolResourceGroupName string
+param JobScheduleName string = newGuid()
 param Location string
 param LogAnalyticsWorkspaceResourceId string
-param LogicAppName string
 param RunbookName string
 param SessionHostExpirationInDays int
 param Tags object
-param Timestamp string
-@description('ISO 8601 timestamp used to determine the webhook expiration date.  The webhook is hardcoded to expire 5 years after the timestamp.')
-param Timestamp2 string = utcNow('u')
+param Time string = utcNow('u')
 param TimeZone string
 param WorkspaceId string
-
 
 resource automationAccount 'Microsoft.Automation/automationAccounts@2021-06-22' = {
   name: AutomationAccountName
@@ -62,32 +59,38 @@ resource runbook 'Microsoft.Automation/automationAccounts/runbooks@2019-06-01' =
   }
 }
 
-resource webhook 'Microsoft.Automation/automationAccounts/webhooks@2015-10-31' = {
+resource schedule 'Microsoft.Automation/automationAccounts/schedules@2022-08-08' = {
   parent: automationAccount
-  name: '${RunbookName}_${Timestamp}'
+  name: runbook.name
   properties: {
-    isEnabled: true
-    expiryTime: dateTimeAdd(Timestamp2, 'P5Y')
+    frequency: 'Day'
+    interval: 1
+    startTime: dateTimeAdd(Time, 'PT15M')
+    timeZone: TimeZone
+  }
+}
+
+resource jobSchedule 'Microsoft.Automation/automationAccounts/jobSchedules@2022-08-08' = {
+  parent: automationAccount
+  #disable-next-line use-stable-resource-identifiers
+  name: JobScheduleName
+  properties: {
+    parameters: {
+      EnvironmentName: environment().name
+      HostPoolName: HostPoolName
+      HostPoolResourceGroupName: HostPoolResourceGroupName
+      SessionHostExpirationInDays: string(SessionHostExpirationInDays)
+      SubscriptionId: subscription().subscriptionId
+      TenantId: subscription().tenantId
+      WorkspaceId: WorkspaceId
+    }
     runbook: {
       name: runbook.name
     }
+    schedule: {
+      name: schedule.name
+    }
   }
 }
-
-module logicApp 'logicApp.bicep' = {
-  name: 'LogicApp'
-  params: {
-    Location: Location
-    LogicAppName: LogicAppName
-    Tags: Tags
-    TimeZone: TimeZone
-    WebhookUri: webhook.properties.uri
-    HostPoolName: HostPoolName
-    HostPoolResourceGroupName: HostPoolResourceGroupName
-    SessionHostExpirationInDays: SessionHostExpirationInDays
-    WorkspaceId: WorkspaceId
-  }
-}
-
 
 output principalId string = automationAccount.identity.principalId

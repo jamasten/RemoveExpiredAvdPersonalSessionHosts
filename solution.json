@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.17.1.54307",
-      "templateHash": "4425274639036207461"
+      "templateHash": "1152787325081327941"
     }
   },
   "parameters": {
@@ -121,7 +121,6 @@
       "westus2": "wu2",
       "westus3": "wu3"
     },
-    "LogicAppName": "[format('la-{0}', variables('NamingStandard'))]",
     "LogAnalyticsWorkspaceName": "[format('law-{0}', variables('NamingStandard'))]",
     "NamingStandard": "[format('avd-mgmt-{0}-{1}', parameters('Environment'), variables('LocationShortName'))]",
     "ResourceGroupName": "[format('rg-{0}', variables('NamingStandard'))]",
@@ -381,9 +380,6 @@
           "LogAnalyticsWorkspaceResourceId": {
             "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('ResourceGroupName')), 'Microsoft.Resources/deployments', format('LogAnalyticsWorkspace_{0}', parameters('Timestamp'))), '2022-09-01').outputs.resourceId.value]"
           },
-          "LogicAppName": {
-            "value": "[variables('LogicAppName')]"
-          },
           "RunbookName": {
             "value": "[variables('RunbookName')]"
           },
@@ -392,9 +388,6 @@
           },
           "Tags": {
             "value": "[parameters('Tags')]"
-          },
-          "Timestamp": {
-            "value": "[parameters('Timestamp')]"
           },
           "TimeZone": {
             "value": "[variables('TimeZone')]"
@@ -410,7 +403,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.17.1.54307",
-              "templateHash": "1628489429797224190"
+              "templateHash": "4781481171641662343"
             }
           },
           "parameters": {
@@ -423,13 +416,14 @@
             "HostPoolResourceGroupName": {
               "type": "string"
             },
+            "JobScheduleName": {
+              "type": "string",
+              "defaultValue": "[newGuid()]"
+            },
             "Location": {
               "type": "string"
             },
             "LogAnalyticsWorkspaceResourceId": {
-              "type": "string"
-            },
-            "LogicAppName": {
               "type": "string"
             },
             "RunbookName": {
@@ -441,15 +435,9 @@
             "Tags": {
               "type": "object"
             },
-            "Timestamp": {
-              "type": "string"
-            },
-            "Timestamp2": {
+            "Time": {
               "type": "string",
-              "defaultValue": "[utcNow('u')]",
-              "metadata": {
-                "description": "ISO 8601 timestamp used to determine the webhook expiration date.  The webhook is hardcoded to expire 5 years after the timestamp."
-              }
+              "defaultValue": "[utcNow('u')]"
             },
             "TimeZone": {
               "type": "string"
@@ -516,15 +504,14 @@
               ]
             },
             {
-              "type": "Microsoft.Automation/automationAccounts/webhooks",
-              "apiVersion": "2015-10-31",
-              "name": "[format('{0}/{1}', parameters('AutomationAccountName'), format('{0}_{1}', parameters('RunbookName'), parameters('Timestamp')))]",
+              "type": "Microsoft.Automation/automationAccounts/schedules",
+              "apiVersion": "2022-08-08",
+              "name": "[format('{0}/{1}', parameters('AutomationAccountName'), parameters('RunbookName'))]",
               "properties": {
-                "isEnabled": true,
-                "expiryTime": "[dateTimeAdd(parameters('Timestamp2'), 'P5Y')]",
-                "runbook": {
-                  "name": "[parameters('RunbookName')]"
-                }
+                "frequency": "Day",
+                "interval": 1,
+                "startTime": "[dateTimeAdd(parameters('Time'), 'PT15M')]",
+                "timeZone": "[parameters('TimeZone')]"
               },
               "dependsOn": [
                 "[resourceId('Microsoft.Automation/automationAccounts', parameters('AutomationAccountName'))]",
@@ -532,130 +519,30 @@
               ]
             },
             {
-              "type": "Microsoft.Resources/deployments",
-              "apiVersion": "2022-09-01",
-              "name": "LogicApp",
+              "type": "Microsoft.Automation/automationAccounts/jobSchedules",
+              "apiVersion": "2022-08-08",
+              "name": "[format('{0}/{1}', parameters('AutomationAccountName'), parameters('JobScheduleName'))]",
               "properties": {
-                "expressionEvaluationOptions": {
-                  "scope": "inner"
-                },
-                "mode": "Incremental",
                 "parameters": {
-                  "Location": {
-                    "value": "[parameters('Location')]"
-                  },
-                  "LogicAppName": {
-                    "value": "[parameters('LogicAppName')]"
-                  },
-                  "Tags": {
-                    "value": "[parameters('Tags')]"
-                  },
-                  "TimeZone": {
-                    "value": "[parameters('TimeZone')]"
-                  },
-                  "WebhookUri": {
-                    "value": "[reference(resourceId('Microsoft.Automation/automationAccounts/webhooks', parameters('AutomationAccountName'), format('{0}_{1}', parameters('RunbookName'), parameters('Timestamp'))), '2015-10-31').uri]"
-                  },
-                  "HostPoolName": {
-                    "value": "[parameters('HostPoolName')]"
-                  },
-                  "HostPoolResourceGroupName": {
-                    "value": "[parameters('HostPoolResourceGroupName')]"
-                  },
-                  "SessionHostExpirationInDays": {
-                    "value": "[parameters('SessionHostExpirationInDays')]"
-                  },
-                  "WorkspaceId": {
-                    "value": "[parameters('WorkspaceId')]"
-                  }
+                  "EnvironmentName": "[environment().name]",
+                  "HostPoolName": "[parameters('HostPoolName')]",
+                  "HostPoolResourceGroupName": "[parameters('HostPoolResourceGroupName')]",
+                  "SessionHostExpirationInDays": "[string(parameters('SessionHostExpirationInDays'))]",
+                  "SubscriptionId": "[subscription().subscriptionId]",
+                  "TenantId": "[subscription().tenantId]",
+                  "WorkspaceId": "[parameters('WorkspaceId')]"
                 },
-                "template": {
-                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-                  "contentVersion": "1.0.0.0",
-                  "metadata": {
-                    "_generator": {
-                      "name": "bicep",
-                      "version": "0.17.1.54307",
-                      "templateHash": "2183564220241956597"
-                    }
-                  },
-                  "parameters": {
-                    "HostPoolName": {
-                      "type": "string"
-                    },
-                    "HostPoolResourceGroupName": {
-                      "type": "string"
-                    },
-                    "Location": {
-                      "type": "string"
-                    },
-                    "LogicAppName": {
-                      "type": "string"
-                    },
-                    "SessionHostExpirationInDays": {
-                      "type": "int"
-                    },
-                    "Tags": {
-                      "type": "object"
-                    },
-                    "TimeZone": {
-                      "type": "string"
-                    },
-                    "WebhookUri": {
-                      "type": "securestring"
-                    },
-                    "WorkspaceId": {
-                      "type": "string"
-                    }
-                  },
-                  "resources": [
-                    {
-                      "type": "Microsoft.Logic/workflows",
-                      "apiVersion": "2016-06-01",
-                      "name": "[parameters('LogicAppName')]",
-                      "location": "[parameters('Location')]",
-                      "tags": "[parameters('Tags')]",
-                      "properties": {
-                        "state": "Enabled",
-                        "definition": {
-                          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
-                          "actions": {
-                            "HTTP": {
-                              "type": "Http",
-                              "inputs": {
-                                "method": "POST",
-                                "uri": "[parameters('WebhookUri')]",
-                                "body": {
-                                  "EnvironmentName": "[environment().name]",
-                                  "HostPoolName": "[parameters('HostPoolName')]",
-                                  "HostPoolResourceGroupName": "[parameters('HostPoolResourceGroupName')]",
-                                  "SessionHostExpirationInDays": "[parameters('SessionHostExpirationInDays')]",
-                                  "SubscriptionId": "[subscription().subscriptionId]",
-                                  "TenantId": "[subscription().tenantId]",
-                                  "WorkspaceId": "[parameters('WorkspaceId')]"
-                                }
-                              }
-                            }
-                          },
-                          "triggers": {
-                            "Recurrence": {
-                              "type": "Recurrence",
-                              "recurrence": {
-                                "frequency": "Day",
-                                "interval": 1,
-                                "startTime": "2022-01-01T23:00:00",
-                                "timeZone": "[parameters('TimeZone')]"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  ]
+                "runbook": {
+                  "name": "[parameters('RunbookName')]"
+                },
+                "schedule": {
+                  "name": "[parameters('RunbookName')]"
                 }
               },
               "dependsOn": [
-                "[resourceId('Microsoft.Automation/automationAccounts/webhooks', parameters('AutomationAccountName'), format('{0}_{1}', parameters('RunbookName'), parameters('Timestamp')))]"
+                "[resourceId('Microsoft.Automation/automationAccounts', parameters('AutomationAccountName'))]",
+                "[resourceId('Microsoft.Automation/automationAccounts/runbooks', parameters('AutomationAccountName'), parameters('RunbookName'))]",
+                "[resourceId('Microsoft.Automation/automationAccounts/schedules', parameters('AutomationAccountName'), parameters('RunbookName'))]"
               ]
             }
           ],

@@ -87,7 +87,6 @@ var LocationShortNames = {
   westus2: 'wu2'
   westus3: 'wu3'
 }
-var LogicAppName = 'la-${NamingStandard}'
 var LogAnalyticsWorkspaceName = 'law-${NamingStandard}'
 var NamingStandard = 'avd-mgmt-${Environment}-${LocationShortName}'
 var ResourceGroupName = 'rg-${NamingStandard}'
@@ -198,11 +197,9 @@ module automationAccount 'modules/automationAccount.bicep' = {
     HostPoolResourceGroupName: HostPoolResourceGroupName
     Location: Location
     LogAnalyticsWorkspaceResourceId: logAnalyticsWorkspace.outputs.resourceId
-    LogicAppName: LogicAppName
     RunbookName: RunbookName
     SessionHostExpirationInDays: SessionHostExpirationInDays
     Tags: Tags
-    Timestamp: Timestamp
     TimeZone: TimeZone
     WorkspaceId: logAnalyticsWorkspace.outputs.workspaceId
   }

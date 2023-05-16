@@ -1,19 +1,26 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
-	[Parameter(Mandatory)]
-	$WebHookData
+    [Parameter(Mandatory)]
+    [string]$EnvironmentName,
+
+    [Parameter(Mandatory)]
+    [string]$HostPoolName,
+
+    [Parameter(Mandatory)]
+    [string]$HostPoolResourceGroupName,
+
+    [Parameter(Mandatory)]
+    [string]$SessionHostExpirationInDays,
+
+    [Parameter(Mandatory)]
+    [string]$SubscriptionId,
+
+    [Parameter(Mandatory)]
+    [string]$TenantId,
+
+    [Parameter(Mandatory)]
+    [string]$WorkspaceId
 )
-
-
-$Parameters = ConvertFrom-Json -InputObject $WebHookData.RequestBody
-$EnvironmentName = $Parameters.PSObject.Properties['EnvironmentName'].Value
-$HostPoolName = $Parameters.PSObject.Properties['HostPoolName'].Value
-$HostPoolResourceGroupName = $Parameters.PSObject.Properties['HostPoolResourceGroupName'].Value
-$SessionHostExpirationInDays = $Parameters.PSObject.Properties['SessionHostExpirationInDays'].Value
-$SubscriptionId = $Parameters.PSObject.Properties['SubscriptionId'].Value
-$TenantId = $Parameters.PSObject.Properties['TenantId'].Value
-$WorkspaceId = $Parameters.PSObject.Properties['WorkspaceId'].Value
-
 
 $ErrorActionPreference = 'Stop'
 
