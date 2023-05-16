@@ -9,11 +9,8 @@ param AutomationAccountName string = 'aa-avd-d-use'
 @description('The distribution group that will recieve email alerts when an AIB image build either succeeds or fails.')
 param DistributionGroup string = ''
 
-@description('The name of the existing AVD host pool to manage expired session hosts.')
-param HostPoolName string
-
-@description('The name of the resource group for the existing AVD host pool to manage expired session hosts.')
-param HostPoolResourceGroupName string
+@description('The resource ID of the existing AVD host pool to manage expired session hosts.')
+param HostPoolResourceId string
 
 @description('Location for all the deployed resources and resource group.')
 param Location string = deployment().location
@@ -35,6 +32,8 @@ param Tags object = {}
 @description('DO NOT MODIFY THE DEFAULT VALUE!')
 param Timestamp string = utcNow('yyyyMMddhhmmss')
 
+var HostPoolName = split(HostPoolResourceId, '/')[8]
+var HostPoolResourceGroupName =split(HostPoolResourceId, '/')[4]
 var RoleAssignments = [
   {
     scope: HostPoolResourceGroupName
