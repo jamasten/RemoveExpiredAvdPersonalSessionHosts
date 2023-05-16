@@ -18,3 +18,5 @@ resource actionGroup 'Microsoft.Insights/actionGroups@2022-06-01' = {
     groupShortName: 'AVD MGMT'
   }
 }
+
+output ResourceId string = actionGroup.id
