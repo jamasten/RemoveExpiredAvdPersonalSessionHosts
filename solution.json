@@ -5,15 +5,29 @@
     "_generator": {
       "name": "bicep",
       "version": "0.17.1.54307",
-      "templateHash": "4031089786458986133"
+      "templateHash": "7421648116620373927"
     }
   },
   "parameters": {
+    "ActionGroupName": {
+      "type": "string",
+      "defaultValue": "ag-avd-d-use",
+      "metadata": {
+        "description": "The name of the action group."
+      }
+    },
     "AutomationAccountName": {
       "type": "string",
       "defaultValue": "aa-avd-d-use",
       "metadata": {
         "description": "The name of the new automation account that will be deployed with this solution."
+      }
+    },
+    "DistributionGroup": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "The distribution group that will recieve email alerts when an AIB image build either succeeds or fails."
       }
     },
     "HostPoolName": {
@@ -236,6 +250,235 @@
         }
       },
       "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('ResourceGroupName'))]"
+      ]
+    },
+    {
+      "condition": "[not(empty(parameters('DistributionGroup')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('ActionGroup_{0}', parameters('Timestamp'))]",
+      "resourceGroup": "[parameters('ResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "ActionGroupName": {
+            "value": "[parameters('ActionGroupName')]"
+          },
+          "DistributionGroup": {
+            "value": "[parameters('DistributionGroup')]"
+          },
+          "Tags": {
+            "value": "[parameters('Tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.17.1.54307",
+              "templateHash": "10394107176150226047"
+            }
+          },
+          "parameters": {
+            "ActionGroupName": {
+              "type": "string"
+            },
+            "DistributionGroup": {
+              "type": "string"
+            },
+            "Tags": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/actionGroups",
+              "apiVersion": "2022-06-01",
+              "name": "[parameters('ActionGroupName')]",
+              "location": "global",
+              "tags": "[parameters('Tags')]",
+              "properties": {
+                "emailReceivers": [
+                  {
+                    "emailAddress": "[parameters('DistributionGroup')]",
+                    "name": "[parameters('DistributionGroup')]",
+                    "useCommonAlertSchema": true
+                  }
+                ],
+                "enabled": true,
+                "groupShortName": "AVD MGMT"
+              }
+            }
+          ],
+          "outputs": {
+            "resourceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Insights/actionGroups', parameters('ActionGroupName'))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('ResourceGroupName'))]"
+      ]
+    },
+    {
+      "condition": "[not(empty(parameters('DistributionGroup')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('Alerts_{0}', parameters('Timestamp'))]",
+      "resourceGroup": "[parameters('ResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "ActionGroupResourceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('ResourceGroupName')), 'Microsoft.Resources/deployments', format('ActionGroup_{0}', parameters('Timestamp'))), '2022-09-01').outputs.resourceId.value]"
+          },
+          "Location": {
+            "value": "[parameters('Location')]"
+          },
+          "LogAnalyticsWorkspaceResourceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('ResourceGroupName')), 'Microsoft.Resources/deployments', format('LogAnalyticsWorkspace_{0}', parameters('Timestamp'))), '2022-09-01').outputs.resourceId.value]"
+          },
+          "Tags": {
+            "value": "[parameters('Tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.17.1.54307",
+              "templateHash": "10696184454833942658"
+            }
+          },
+          "parameters": {
+            "ActionGroupResourceId": {
+              "type": "string"
+            },
+            "Location": {
+              "type": "string"
+            },
+            "LogAnalyticsWorkspaceResourceId": {
+              "type": "string"
+            },
+            "Tags": {
+              "type": "object"
+            }
+          },
+          "variables": {
+            "Alerts": [
+              {
+                "name": "Remove Expired AVD Session Hosts - Failure",
+                "description": "Sends an error alert when the runbook fails to execute.",
+                "severity": 0,
+                "evaluationFrequency": "PT5M",
+                "windowSize": "PT5M",
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "AzureDiagnostics\n| where ResourceProvider == \"MICROSOFT.AUTOMATION\"\n| where Category  == \"JobStreams\"\n| where ResultDescription has \"Failed to remove session hosts\"",
+                      "timeAggregation": "Count",
+                      "dimensions": [
+                        {
+                          "name": "ResultDescription",
+                          "operator": "Include",
+                          "values": [
+                            "*"
+                          ]
+                        }
+                      ],
+                      "operator": "GreaterThanOrEqual",
+                      "threshold": 1,
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "Remove Expired AVD Session Hosts - Success",
+                "description": "Sends an informational alert when AVD session hosts are removed.",
+                "severity": 3,
+                "evaluationFrequency": "PT5M",
+                "windowSize": "PT5M",
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "AzureDiagnostics\n| where ResourceProvider == \"MICROSOFT.AUTOMATION\"\n| where Category  == \"JobStreams\"\n| where ResultDescription has \"Removed session host\"",
+                      "timeAggregation": "Count",
+                      "dimensions": [
+                        {
+                          "name": "ResultDescription",
+                          "operator": "Include",
+                          "values": [
+                            "*"
+                          ]
+                        }
+                      ],
+                      "operator": "GreaterThanOrEqual",
+                      "threshold": 1,
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "resources": [
+            {
+              "copy": {
+                "name": "scheduledQueryRules",
+                "count": "[length(range(0, length(variables('Alerts'))))]"
+              },
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2022-06-15",
+              "name": "[variables('Alerts')[range(0, length(variables('Alerts')))[copyIndex()]].name]",
+              "location": "[parameters('Location')]",
+              "tags": "[parameters('Tags')]",
+              "kind": "LogAlert",
+              "properties": {
+                "actions": {
+                  "actionGroups": [
+                    "[parameters('ActionGroupResourceId')]"
+                  ]
+                },
+                "autoMitigate": false,
+                "skipQueryValidation": false,
+                "criteria": "[variables('Alerts')[range(0, length(variables('Alerts')))[copyIndex()]].criteria]",
+                "description": "[variables('Alerts')[range(0, length(variables('Alerts')))[copyIndex()]].description]",
+                "displayName": "[variables('Alerts')[range(0, length(variables('Alerts')))[copyIndex()]].name]",
+                "enabled": true,
+                "evaluationFrequency": "[variables('Alerts')[range(0, length(variables('Alerts')))[copyIndex()]].evaluationFrequency]",
+                "severity": "[variables('Alerts')[range(0, length(variables('Alerts')))[copyIndex()]].severity]",
+                "windowSize": "[variables('Alerts')[range(0, length(variables('Alerts')))[copyIndex()]].windowSize]",
+                "scopes": [
+                  "[parameters('LogAnalyticsWorkspaceResourceId')]"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('ResourceGroupName')), 'Microsoft.Resources/deployments', format('ActionGroup_{0}', parameters('Timestamp')))]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('ResourceGroupName')), 'Microsoft.Resources/deployments', format('LogAnalyticsWorkspace_{0}', parameters('Timestamp')))]",
         "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('ResourceGroupName'))]"
       ]
     },
