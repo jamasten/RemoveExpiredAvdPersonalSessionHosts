@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.17.1.54307",
-      "templateHash": "7421648116620373927"
+      "templateHash": "10329941689498025646"
     }
   },
   "parameters": {
@@ -30,16 +30,10 @@
         "description": "The distribution group that will recieve email alerts when an AIB image build either succeeds or fails."
       }
     },
-    "HostPoolName": {
+    "HostPoolResourceId": {
       "type": "string",
       "metadata": {
-        "description": "The name of the existing AVD host pool to manage expired session hosts."
-      }
-    },
-    "HostPoolResourceGroupName": {
-      "type": "string",
-      "metadata": {
-        "description": "The name of the resource group for the existing AVD host pool to manage expired session hosts."
+        "description": "The resource ID of the existing AVD host pool to manage expired session hosts."
       }
     },
     "Location": {
@@ -88,9 +82,11 @@
     }
   },
   "variables": {
+    "HostPoolName": "[split(parameters('HostPoolResourceId'), '/')[8]]",
+    "HostPoolResourceGroupName": "[split(parameters('HostPoolResourceId'), '/')[4]]",
     "RoleAssignments": [
       {
-        "scope": "[parameters('HostPoolResourceGroupName')]",
+        "scope": "[variables('HostPoolResourceGroupName')]",
         "roleDefinitionId": "a959dbd1-f747-45e3-8ba6-dd80f235f97c"
       },
       {
@@ -197,7 +193,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.17.1.54307",
-              "templateHash": "2825400617272471501"
+              "templateHash": "6156917778862477035"
             }
           },
           "parameters": {
@@ -215,7 +211,7 @@
             }
           },
           "variables": {
-            "LogAnalyticsWorkspaceRetention": "[if(lessOrEquals(parameters('SessionHostExpirationInDays'), 30), 30, parameters('SessionHostExpirationInDays'))]"
+            "LogAnalyticsWorkspaceRetention": "[if(less(parameters('SessionHostExpirationInDays'), 30), 30, add(parameters('SessionHostExpirationInDays'), 1))]"
           },
           "resources": [
             {
@@ -486,7 +482,7 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "[format('HostPool_{0}', parameters('Timestamp'))]",
-      "resourceGroup": "[parameters('HostPoolResourceGroupName')]",
+      "resourceGroup": "[variables('HostPoolResourceGroupName')]",
       "properties": {
         "expressionEvaluationOptions": {
           "scope": "inner"
@@ -494,7 +490,7 @@
         "mode": "Incremental",
         "parameters": {
           "HostPoolName": {
-            "value": "[parameters('HostPoolName')]"
+            "value": "[variables('HostPoolName')]"
           },
           "LogAnalyticsWorkspaceResourceId": {
             "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('ResourceGroupName')), 'Microsoft.Resources/deployments', format('LogAnalyticsWorkspace_{0}', parameters('Timestamp'))), '2022-09-01').outputs.resourceId.value]"
@@ -556,10 +552,10 @@
             "value": "[parameters('AutomationAccountName')]"
           },
           "HostPoolName": {
-            "value": "[parameters('HostPoolName')]"
+            "value": "[variables('HostPoolName')]"
           },
           "HostPoolResourceGroupName": {
-            "value": "[parameters('HostPoolResourceGroupName')]"
+            "value": "[variables('HostPoolResourceGroupName')]"
           },
           "Location": {
             "value": "[parameters('Location')]"
