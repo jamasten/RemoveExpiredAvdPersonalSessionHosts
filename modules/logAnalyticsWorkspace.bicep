@@ -3,9 +3,7 @@ param LogAnalyticsWorkspaceName string
 param SessionHostExpirationInDays int
 param Tags object
 
-
 var LogAnalyticsWorkspaceRetention = SessionHostExpirationInDays <= 30 ? 30 : SessionHostExpirationInDays
-
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
   name: LogAnalyticsWorkspaceName
@@ -24,7 +22,5 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06
   }
 }
 
-
 output resourceId string = logAnalyticsWorkspace.id
 output workspaceId string = logAnalyticsWorkspace.properties.customerId
-
