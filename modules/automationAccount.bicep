@@ -1,4 +1,5 @@
 param AutomationAccountName string
+param EnableAlerts bool
 param HostPoolName string
 param HostPoolResourceGroupName string
 param JobScheduleName string = newGuid()
@@ -25,7 +26,7 @@ resource automationAccount 'Microsoft.Automation/automationAccounts@2021-06-22' 
   }
 }
 
-resource diagnosticsSetting 'Microsoft.Insights/diagnosticsettings@2017-05-01-preview' = {
+resource diagnosticsSetting 'Microsoft.Insights/diagnosticsettings@2017-05-01-preview' = if(EnableAlerts) {
   scope: automationAccount
   name: 'diag-${automationAccount.name}'
   properties: {

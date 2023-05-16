@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.17.1.54307",
-      "templateHash": "10329941689498025646"
+      "templateHash": "12106672420788381091"
     }
   },
   "parameters": {
@@ -551,6 +551,7 @@
           "AutomationAccountName": {
             "value": "[parameters('AutomationAccountName')]"
           },
+          "EnableAlerts": "[if(empty(parameters('DistributionGroup')), createObject('value', false()), createObject('value', true()))]",
           "HostPoolName": {
             "value": "[variables('HostPoolName')]"
           },
@@ -586,12 +587,15 @@
             "_generator": {
               "name": "bicep",
               "version": "0.17.1.54307",
-              "templateHash": "4781481171641662343"
+              "templateHash": "13623913268409085494"
             }
           },
           "parameters": {
             "AutomationAccountName": {
               "type": "string"
+            },
+            "EnableAlerts": {
+              "type": "bool"
             },
             "HostPoolName": {
               "type": "string"
@@ -646,6 +650,7 @@
               }
             },
             {
+              "condition": "[parameters('EnableAlerts')]",
               "type": "Microsoft.Insights/diagnosticSettings",
               "apiVersion": "2017-05-01-preview",
               "scope": "[format('Microsoft.Automation/automationAccounts/{0}', parameters('AutomationAccountName'))]",

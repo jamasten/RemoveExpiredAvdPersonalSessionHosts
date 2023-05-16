@@ -156,6 +156,7 @@ module automationAccount 'modules/automationAccount.bicep' = {
   scope: rg
   params: {
     AutomationAccountName: AutomationAccountName
+    EnableAlerts: empty(DistributionGroup) ? false : true
     HostPoolName: HostPoolName
     HostPoolResourceGroupName: HostPoolResourceGroupName
     Location: Location
