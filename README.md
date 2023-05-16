@@ -16,6 +16,10 @@ The following resources are deployed in this solution:
 * Role Assignments
 * Schedule Query Rules, aka Alerts (Optional)
 
+## Prerequisites
+
+The principal deploying this solution must be an Owner on the subscription.  This is required to successfully deploy the resources listed above.
+
 ## Deployment Options
 
 ### Azure Portal
