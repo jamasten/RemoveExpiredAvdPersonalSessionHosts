@@ -1,23 +1,22 @@
 targetScope = 'subscription'
 
+@description('The name of the new automation account that will be deployed with this solution.')
+param AutomationAccountName string = 'aa-avd-d-use'
 
-@allowed([
-  'd' // Development
-  'p' // Production
-  's' // Shared
-  't' // Test
-])
-@description('The target environment for the solution.')
-param Environment string = 'd'
-
-@description('The name of the AVD host pool to manage expired session hosts.')
+@description('The name of the existing AVD host pool to manage expired session hosts.')
 param HostPoolName string
 
-@description('The name of the resource group for the AVD host pool to manage expired session hosts.')
+@description('The name of the resource group for the existing AVD host pool to manage expired session hosts.')
 param HostPoolResourceGroupName string
 
 @description('Location for all the deployed resources and resource group.')
 param Location string = deployment().location
+
+@description('The name of the new log analytics workspace that will be deployed with this solution.')
+param LogAnalyticsWorkspaceName string = 'law-avd-d-use'
+
+@description('The name of the new resource group that will be deployed with this solution')
+param ResourceGroupName string = 'rg-avd-d-use'
 
 @maxValue(730)
 @minValue(1)
@@ -25,71 +24,11 @@ param Location string = deployment().location
 param SessionHostExpirationInDays int = 90
 
 @description('The key / value pairs of metadata for the Azure resources.')
-param Tags object = {
-}
+param Tags object = {}
 
 @description('DO NOT MODIFY THE DEFAULT VALUE!')
 param Timestamp string = utcNow('yyyyMMddhhmmss')
 
-
-var AutomationAccountName = 'aa-${NamingStandard}'
-var LocationShortName = LocationShortNames[Location]
-var LocationShortNames = {
-  australiacentral: 'ac'
-  australiacentral2: 'ac2'
-  australiaeast: 'ae'
-  australiasoutheast: 'as'
-  brazilsouth: 'bs2'
-  brazilsoutheast: 'bs'
-  canadacentral: 'cc'
-  canadaeast: 'ce'
-  centralindia: 'ci'
-  centralus: 'cu'
-  eastasia: 'ea'
-  eastus: 'eu'
-  eastus2: 'eu2'
-  francecentral: 'fc'
-  francesouth: 'fs'
-  germanynorth: 'gn'
-  germanywestcentral: 'gwc'
-  japaneast: 'je'
-  japanwest: 'jw'
-  jioindiacentral: 'jic'
-  jioindiawest: 'jiw'
-  koreacentral: 'kc'
-  koreasouth: 'ks'
-  northcentralus: 'ncu'
-  northeurope: 'ne'
-  norwayeast: 'ne2'
-  norwaywest: 'nw'
-  southafricanorth: 'san'
-  southafricawest: 'saw'
-  southcentralus: 'scu'
-  southeastasia: 'sa'
-  southindia: 'si'
-  swedencentral: 'sc'
-  switzerlandnorth: 'sn'
-  switzerlandwest: 'sw'
-  uaecentral: 'uc'
-  uaenorth: 'un'
-  uksouth: 'us'
-  ukwest: 'uw'
-  usdodcentral: 'uc'
-  usdodeast: 'ue'
-  usgovarizona: 'az'
-  usgoviowa: 'ia'
-  usgovtexas: 'tx'
-  usgovvirginia: 'va'
-  westcentralus: 'wcu'
-  westeurope: 'we'
-  westindia: 'wi'
-  westus: 'wu'
-  westus2: 'wu2'
-  westus3: 'wu3'
-}
-var LogAnalyticsWorkspaceName = 'law-${NamingStandard}'
-var NamingStandard = 'avd-mgmt-${Environment}-${LocationShortName}'
-var ResourceGroupName = 'rg-${NamingStandard}'
 var RoleAssignments = [
   {
     scope: HostPoolResourceGroupName
@@ -160,7 +99,6 @@ var TimeZones = {
   westus3: 'Mountain Standard Time'
 }
 
-
 resource rg 'Microsoft.Resources/resourceGroups@2020-10-01' = {
   name: ResourceGroupName
   location: Location
@@ -184,7 +122,6 @@ module hostPool 'modules/hostPool.bicep' = {
   params: {
     HostPoolName: HostPoolName
     LogAnalyticsWorkspaceResourceId: logAnalyticsWorkspace.outputs.resourceId
-    NamingStandard: NamingStandard
   }
 }
 
