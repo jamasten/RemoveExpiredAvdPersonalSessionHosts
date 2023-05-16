@@ -1,7 +1,13 @@
 targetScope = 'subscription'
 
+@description('The name of the action group.')
+param ActionGroupName string = 'ag-avd-d-use'
+
 @description('The name of the new automation account that will be deployed with this solution.')
 param AutomationAccountName string = 'aa-avd-d-use'
+
+@description('The distribution group that will recieve email alerts when an AIB image build either succeeds or fails.')
+param DistributionGroup string = ''
 
 @description('The name of the existing AVD host pool to manage expired session hosts.')
 param HostPoolName string
@@ -112,6 +118,27 @@ module logAnalyticsWorkspace 'modules/logAnalyticsWorkspace.bicep' = {
     Location: Location
     LogAnalyticsWorkspaceName: LogAnalyticsWorkspaceName
     SessionHostExpirationInDays: SessionHostExpirationInDays
+    Tags: Tags
+  }
+}
+
+module actionGroup 'modules/actionGroup.bicep' = if(!empty(DistributionGroup)) {
+  scope: rg
+  name: 'ActionGroup_${Timestamp}'
+  params: {
+    ActionGroupName: ActionGroupName
+    DistributionGroup: DistributionGroup
+    Tags: Tags
+  }
+}
+
+module scheduledQueryRules 'modules/scheduledQueryRules.bicep' = if(!empty(DistributionGroup)) {
+  scope: rg
+  name: 'Alerts_${Timestamp}'
+  params: {
+    ActionGroupResourceId: actionGroup.outputs.resourceId
+    Location: Location
+    LogAnalyticsWorkspaceResourceId: logAnalyticsWorkspace.outputs.resourceId
     Tags: Tags
   }
 }
