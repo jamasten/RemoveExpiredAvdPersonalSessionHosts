@@ -3,7 +3,9 @@ param LogAnalyticsWorkspaceName string
 param SessionHostExpirationInDays int
 param Tags object
 
-var LogAnalyticsWorkspaceRetention = SessionHostExpirationInDays <= 30 ? 30 : SessionHostExpirationInDays
+// 30 days is the minimum number of days to retain data
+// Adding an extra day to the session host expiration value to ensure last minute logins are captured before removal
+var LogAnalyticsWorkspaceRetention = SessionHostExpirationInDays < 30 ? 30 : (SessionHostExpirationInDays + 1)
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
   name: LogAnalyticsWorkspaceName
